@@ -3,6 +3,11 @@
 
 <head>
   <meta charset="UTF-8" />
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>X5 MED | De Médico Técnico a Empresário de Verdade</title>
   <meta name="description"
@@ -12,6 +17,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap"
     rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="assets/x5-logo.png">
 
   <!-- Three.js + GLTFLoader via importmap -->
@@ -1275,11 +1281,11 @@
       width: 100%; height: 100%;
     }
     .badge-text-svg text {
-      font-family: var(--font);
-      font-size: 11.5px;
-      font-weight: 600;
+      font-family: 'Sora', sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
       fill: var(--text-secondary);
-      letter-spacing: 1.5px;
+      letter-spacing: 5px;
     }
 
   </style>
@@ -1327,7 +1333,7 @@
       <svg class="badge-text-svg" viewBox="0 0 100 100">
         <path id="badgePath" d="M 50, 50 m -35, 0 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0" fill="transparent" />
         <text>
-          <textPath href="#badgePath" startOffset="0%" textLength="219.9">LIVES SEMANAIS AS 20H BRT • LIVES SEMANAIS AS 20H BRT • </textPath>
+          <textPath href="#badgePath" startOffset="0%">LIVES SEMANAIS AS 20H BRT • LIVES SEMANAIS AS 20H BRT •</textPath>
         </text>
       </svg>
     </div>
@@ -1671,273 +1677,6 @@
       });
     }
     
-    // ── SCROLL REVEAL ──
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const i = [...e.target.parentElement.children]
-            .filter(el => el.classList.contains('reveal'))
-            .indexOf(e.target);
-          setTimeout(() => e.target.classList.add('visible'), Math.min(i * 80, 320));
-          obs.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
-    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-    // ── SMOOTH SCROLL ──
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', e => {
-        const t = document.querySelector(a.getAttribute('href'));
-        if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-      });
-    });
-
-    // ── PARALLAX HERO (multi-layer depth) ──
-    const heroImg = document.querySelector('.hero-bg img');
-    const heroTextArea = document.querySelector('.hero-text-area');
-    const heroOverlay = document.querySelector('.hero-overlay');
-
-    window.addEventListener('scroll', () => {
-      const sy = window.scrollY;
-      if (sy < window.innerHeight) {
-        // Background moves slower (parallax depth)
-        if (heroImg) heroImg.style.transform = `translateY(${sy * 0.2}px) scale(1.05)`;
-        // Text moves faster for depth separation
-        if (heroTextArea) heroTextArea.style.transform = `translateY(${sy * -0.08}px)`;
-        // Overlay fades slightly for atmospheric effect
-        if (heroOverlay) heroOverlay.style.opacity = 1 + (sy * 0.0003);
-      }
-    });
-
-    // ── THREE.JS HERO PARTICLES + FLOATING GEOMETRIES ──
-    (function initHeroEffects() {
-      const canvas = document.getElementById('three-canvas');
-      const hero = document.getElementById('hero');
-      if (!canvas) return;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 5;
-
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-      // Floating particles
-      const particleCount = 100;
-      const positions = new Float32Array(particleCount * 3);
-      const velocities = [];
-      const sizes = new Float32Array(particleCount);
-
-      for (let i = 0; i < particleCount; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 16;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 8;
-        sizes[i] = Math.random() * 0.06 + 0.02;
-        velocities.push({
-          x: (Math.random() - 0.5) * 0.003,
-          y: (Math.random() - 0.5) * 0.003 + 0.002,
-          z: (Math.random() - 0.5) * 0.002
-        });
-      }
-
-      const particleGeometry = new THREE.BufferGeometry();
-      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-      const particleMaterial = new THREE.PointsMaterial({
-        color: 0x00D4FF,
-        size: 0.045,
-        transparent: true,
-        opacity: 0.45,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true,
-      });
-
-      const particles = new THREE.Points(particleGeometry, particleMaterial);
-      scene.add(particles);
-
-      // Connection lines between nearby particles
-      const lineGeometry = new THREE.BufferGeometry();
-      const linePositions = new Float32Array(particleCount * particleCount * 6);
-      lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-
-      const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0x00D4FF,
-        transparent: true,
-        opacity: 0.05,
-        blending: THREE.AdditiveBlending,
-      });
-      const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-      scene.add(lines);
-
-      // Small floating geometric shapes for visual interest
-      const floatingShapes = [];
-      const shapeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00D4FF,
-        transparent: true,
-        opacity: 0.08,
-        wireframe: true,
-      });
-
-      for (let i = 0; i < 6; i++) {
-        const geometries = [
-          new THREE.OctahedronGeometry(0.15, 0),
-          new THREE.TetrahedronGeometry(0.12, 0),
-          new THREE.IcosahedronGeometry(0.1, 0),
-        ];
-        const geo = geometries[Math.floor(Math.random() * geometries.length)];
-        const mesh = new THREE.Mesh(geo, shapeMaterial.clone());
-        mesh.position.set(
-          (Math.random() - 0.5) * 12,
-          (Math.random() - 0.5) * 8,
-          (Math.random() - 0.5) * 4
-        );
-        mesh.userData.rotSpeed = {
-          x: (Math.random() - 0.5) * 0.01,
-          y: (Math.random() - 0.5) * 0.01,
-        };
-        mesh.userData.floatOffset = Math.random() * Math.PI * 2;
-        mesh.userData.floatSpeed = 0.0005 + Math.random() * 0.001;
-        mesh.userData.baseY = mesh.position.y;
-        scene.add(mesh);
-        floatingShapes.push(mesh);
-      }
-
-      let mouse = { x: 0, y: 0 };
-      window.addEventListener('mousemove', (e) => {
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      });
-
-      function animate() {
-        requestAnimationFrame(animate);
-
-        const time = Date.now();
-        const pos = particles.geometry.attributes.position.array;
-
-        for (let i = 0; i < particleCount; i++) {
-          pos[i * 3] += velocities[i].x;
-          pos[i * 3 + 1] += velocities[i].y;
-          pos[i * 3 + 2] += velocities[i].z;
-
-          if (Math.abs(pos[i * 3]) > 8) velocities[i].x *= -1;
-          if (Math.abs(pos[i * 3 + 1]) > 6) velocities[i].y *= -1;
-          if (Math.abs(pos[i * 3 + 2]) > 4) velocities[i].z *= -1;
-        }
-
-        // Update connection lines
-        let lineIdx = 0;
-        const lp = lines.geometry.attributes.position.array;
-        for (let i = 0; i < particleCount; i++) {
-          for (let j = i + 1; j < particleCount; j++) {
-            const dx = pos[i * 3] - pos[j * 3];
-            const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-            const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-            if (dist < 2.2) {
-              lp[lineIdx++] = pos[i * 3]; lp[lineIdx++] = pos[i * 3 + 1]; lp[lineIdx++] = pos[i * 3 + 2];
-              lp[lineIdx++] = pos[j * 3]; lp[lineIdx++] = pos[j * 3 + 1]; lp[lineIdx++] = pos[j * 3 + 2];
-            }
-          }
-        }
-        for (let i = lineIdx; i < lp.length; i++) lp[i] = 0;
-
-        particles.geometry.attributes.position.needsUpdate = true;
-        lines.geometry.attributes.position.needsUpdate = true;
-
-        // Floating shapes animation
-        floatingShapes.forEach(shape => {
-          shape.rotation.x += shape.userData.rotSpeed.x;
-          shape.rotation.y += shape.userData.rotSpeed.y;
-          shape.position.y = shape.userData.baseY + Math.sin(time * shape.userData.floatSpeed + shape.userData.floatOffset) * 0.3;
-        });
-
-        // Subtle camera response to mouse
-        camera.position.x += (mouse.x * 0.3 - camera.position.x) * 0.02;
-        camera.position.y += (mouse.y * 0.3 - camera.position.y) * 0.02;
-        camera.lookAt(scene.position);
-
-        // Fade based on scroll
-        const scrollRatio = Math.min(window.scrollY / window.innerHeight, 1);
-        particleMaterial.opacity = 0.45 * (1 - scrollRatio);
-        lineMaterial.opacity = 0.05 * (1 - scrollRatio);
-        floatingShapes.forEach(s => { s.material.opacity = 0.08 * (1 - scrollRatio); });
-
-        renderer.render(scene, camera);
-      }
-
-      animate();
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    })();
-
-    // ── THREE.JS 3D CHESS PAWN (GLB) — SCROLL-DRIVEN ROTATION ──
-    (async function initPawn() {
-      const container = document.getElementById('pawn-container');
-      const canvas = document.getElementById('pawn-canvas');
-      if (!canvas || !container) return;
-
-      const w = container.clientWidth || 400;
-      const h = container.clientHeight || 400;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
-      camera.position.set(0, 2, 7);
-      camera.lookAt(0, 1.5, 0);
-
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.5;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-
-
-      // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 2.5); // Very bright to eliminate deep black shadows
-      scene.add(ambientLight);
-
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
-      keyLight.position.set(3, 5, 4);
-      keyLight.castShadow = true;
-      scene.add(keyLight);
-
-      const fillLight = new THREE.DirectionalLight(0x6688cc, 0.5);
-      fillLight.position.set(-3, 2, -2);
-      scene.add(fillLight);
-
-      const rimLight = new THREE.DirectionalLight(0x00D4FF, 1.0);
-      rimLight.position.set(-2, 3, -4);
-      scene.add(rimLight);
-
-      const bottomLight = new THREE.PointLight(0x003366, 0.7, 10);
-      bottomLight.position.set(0, -1, 2);
-      scene.add(bottomLight);
-
-      const topLight = new THREE.PointLight(0xffffff, 0.4, 10);
-      topLight.position.set(0, 5, 3);
-      scene.add(topLight);
-
-      // Environment glow
-      const envLight = new THREE.HemisphereLight(0x222222, 0x080808, 0.4);
-      scene.add(envLight);
-
-      // Vibrant Glossy Blue material (low metalness brings out base color, low roughness creates gloss)
-      const redMaterial = new THREE.MeshStandardMaterial({
-        color: 0x00A8FF,       // Vivid cyan-blue base
-        metalness: 0.1,        // Solid material (not a mirror)
-        roughness: 0.05,       // Extremely smooth and shiny
-      });
-
       // Load GLB model — use a pivot group for true local-center rotation
       const loader = new GLTFLoader();
       let pivotGroup = null; // This group rotates; the model is offset inside it
