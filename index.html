@@ -1485,7 +1485,7 @@
 
           
           <div class="hero-video-container">
-            <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
+            <video id="chess-video" class="hero-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
           </div>
   
         </div>
@@ -1634,7 +1634,7 @@
           <span>Semanalmente às 20H BRT</span>
         </div>
         <div class="reveal">
-          <a href="#" class="cta-btn cta-final" id="cta-final">
+          <a href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank" class="cta-btn cta-final" id="cta-final">
             ENTRE AGORA E GARANTA SEU ACESSO
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5">
@@ -1659,7 +1659,7 @@
 
     
     
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    
 
     // ── NAVBAR SCROLL ──
     const navbar = document.getElementById('navbar');
@@ -1968,8 +1968,7 @@
       const video = document.getElementById('chess-video');
       if (!video) return;
 
-      // Ensure video is totally loaded before scrubbing
-      video.addEventListener('loadedmetadata', () => {
+      function setupScrub() {
         let isScrolling = false;
 
         function scrubVideo() {
@@ -2007,7 +2006,13 @@
         
         // Initial scrub call to set frame on load
         video.currentTime = 0;
-      });
+      }
+
+      if (video.readyState >= 1) {
+        setupScrub();
+      } else {
+        video.addEventListener('loadedmetadata', setupScrub);
+      }
     })();
   
   </script>
