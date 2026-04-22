@@ -1778,7 +1778,7 @@
 
 
       // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0x333333, 1.2);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 2.5); // Very bright to eliminate deep black shadows
       scene.add(ambientLight);
 
       const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -1806,11 +1806,11 @@
       const envLight = new THREE.HemisphereLight(0x222222, 0x080808, 0.4);
       scene.add(envLight);
 
-      // High-Gloss Blue Metallic material
+      // Vibrant Glossy Blue material (low metalness brings out base color, low roughness creates gloss)
       const redMaterial = new THREE.MeshStandardMaterial({
-        color: 0x00A8FF,       // Bright glossy cyan-blue base
-        metalness: 0.95,
-        roughness: 0.05,       // Very smooth
+        color: 0x00A8FF,       // Vivid cyan-blue base
+        metalness: 0.1,        // Solid material (not a mirror)
+        roughness: 0.05,       // Extremely smooth and shiny
       });
 
       // Load GLB model — use a pivot group for true local-center rotation
