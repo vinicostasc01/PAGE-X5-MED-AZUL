@@ -1316,12 +1316,11 @@
       width: 100%;
       max-width: 720px;
       margin: 0 auto;
-      z-index: 2;
       pointer-events: none;
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
+      mix-blend-mode: screen;
     }
     .hero-video {
       width: 100%;
@@ -1972,18 +1971,22 @@
         let isScrolling = false;
 
         function scrubVideo() {
-          // Calculate scroll progress (0 to 1) based on current scroll position relative to total page height
-          const scrollY = window.scrollY || window.pageYOffset;
-          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-          const scrollProgress = maxScroll > 0 ? (scrollY / maxScroll) : 0;
+          // Intersection based scrubbing: The video plays entirely between entering and leaving the screen
+          const rect = video.getBoundingClientRect();
+          const startY = window.innerHeight; // Bottom of viewport
+          const endY = -rect.height;         // Top of viewport
+          
+          let rawProgress = (startY - rect.top) / (startY - endY);
+          
+          if (rawProgress < 0) rawProgress = 0;
+          if (rawProgress > 1) rawProgress = 1;
 
-          // Multiply by the video duration
-          const targetTime = scrollProgress * video.duration;
+          // Target time maps exactly to the video duration inside its visible boundary
+          const targetTime = rawProgress * video.duration;
 
-          // Request animation frame is not strictly needed for direct scroll matching, but helps smooth out native rendering
           if (!isNaN(targetTime) && isFinite(targetTime)) {
-            // Smoothly lerp towards target frame to prevent stuttering
-            video.currentTime += (targetTime - video.currentTime) * 0.1;
+            // Lerp multiplier increased to 0.25 for explosive velocity feedback
+            video.currentTime += (targetTime - video.currentTime) * 0.25;
           }
 
           if (isScrolling) {
