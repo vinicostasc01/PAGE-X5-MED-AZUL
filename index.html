@@ -1347,20 +1347,42 @@
     #chess-video {
       width: 720px;
       height: 720px;
+    /* ── SCROLL VIDEO STYLES ── */
+    #chess-video {
+      position: absolute;
+      right: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 720px;
+      height: 720px;
       object-fit: cover;
-      mix-blend-mode: screen;
+      mix-blend-mode: screen; /* Remove parts pretas do video */
       pointer-events: none;
-      display: block;
-      margin: 0 auto;
+      z-index: 5;
     }
-    @media (max-width: 900px) {
+
+    @media (max-width: 1300px) {
       #chess-video {
-        width: 100%;
-        height: auto;
-        max-height: 400px;
+        width: 550px;
+        height: 550px;
+        right: 0%;
       }
     }
-  
+
+    @media (max-width: 900px) {
+      #chess-video {
+        position: relative;
+        transform: none;
+        right: auto;
+        top: auto;
+        width: 100%;
+        height: auto;
+        max-width: 400px;
+        max-height: 400px;
+        margin: 40px auto 30px auto;
+        display: block;
+      }
+    }
   </style>
 </head>
 
@@ -1392,6 +1414,10 @@
     <div class="hero-overlay"></div>
     <div class="hero-vignette"></div>
     <canvas id="three-canvas"></canvas>
+
+    <!-- ── SCROLL-DRIVEN VIDEO HERO ── -->
+    <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
+
 
     <!-- Empty space where background people are visible (centered via object-position) -->
     <div class="hero-people-area"></div>
@@ -1961,6 +1987,32 @@
     })();
 
     
+    // ── SCROLL SCRUB VIDEO LOGIC ──
+    const heroVideo = document.getElementById('chess-video');
+    if (heroVideo) {
+      // Trigger scrubbing once metadata (duration) loaded
+      heroVideo.addEventListener('loadedmetadata', function() {
+        // Pause to prevent normal playback
+        heroVideo.pause();
+
+        function scrubVideo() {
+          const scrollY = window.scrollY || window.pageYOffset;
+          // Set duration range over which video scrubs (e.g. 1.5x screen height)
+          const scrollEnd = document.documentElement.clientHeight * 1.5;
+          
+          let progress = scrollY / scrollEnd;
+          if (progress < 0) progress = 0;
+          if (progress > 0.999) progress = 0.999;
+          
+          // Map scroll progress to video timeline
+          heroVideo.currentTime = heroVideo.duration * progress;
+          
+          requestAnimationFrame(scrubVideo); // Loops natively with browser repaints
+        }
+        
+        requestAnimationFrame(scrubVideo);
+      });
+    }
   </script>
 </body>
 
