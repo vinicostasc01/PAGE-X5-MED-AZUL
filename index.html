@@ -1930,40 +1930,27 @@
 
 
 
-      // Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 2.5); // Very bright to eliminate deep black shadows
+      // Lighting Setup - Studio Photorealism
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Low ambient to preserve deep shadows
       scene.add(ambientLight);
 
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
-      keyLight.position.set(3, 5, 4);
-      keyLight.castShadow = true;
+      const keyLight = new THREE.DirectionalLight(0xffffff, 4.0); // Hard, intense key light for crisp speculars
+      keyLight.position.set(4, 6, 4);
       scene.add(keyLight);
 
-      const fillLight = new THREE.DirectionalLight(0x6688cc, 0.5);
-      fillLight.position.set(-3, 2, -2);
-      scene.add(fillLight);
-
-      const rimLight = new THREE.DirectionalLight(0x00D4FF, 1.0);
-      rimLight.position.set(-2, 3, -4);
+      const rimLight = new THREE.DirectionalLight(0x00D4FF, 2.0); // Sharp cyan rim light
+      rimLight.position.set(-5, 5, -5);
       scene.add(rimLight);
 
-      const bottomLight = new THREE.PointLight(0x003366, 0.7, 10);
-      bottomLight.position.set(0, -1, 2);
-      scene.add(bottomLight);
+      const fillLight = new THREE.PointLight(0x0033bb, 2.5, 20); // Saturated blue fill from the bottom
+      fillLight.position.set(-1, -2, 4);
+      scene.add(fillLight);
 
-      const topLight = new THREE.PointLight(0xffffff, 0.4, 10);
-      topLight.position.set(0, 5, 3);
-      scene.add(topLight);
-
-      // Environment glow
-      const envLight = new THREE.HemisphereLight(0x222222, 0x080808, 0.4);
-      scene.add(envLight);
-
-      // Vibrant Glossy Blue material (low metalness brings out base color, low roughness creates gloss)
+      // Deep Cobalt-Blue Metal Material (Crisp, defined, un-blown)
       const redMaterial = new THREE.MeshStandardMaterial({
-        color: 0x00A8FF,       // Vivid cyan-blue base
-        metalness: 0.1,        // Solid material (not a mirror)
-        roughness: 0.05,       // Extremely smooth and shiny
+        color: 0x002277,       // Deep saturated cobalt-blue base
+        metalness: 1.0,        // Absolute pure metal
+        roughness: 0.12,       // Highly polished, sharp pin-point reflections
       });
 
       // Load GLB model — use a pivot group for true local-center rotation
