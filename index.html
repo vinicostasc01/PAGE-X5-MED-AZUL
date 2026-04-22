@@ -709,8 +709,12 @@
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      /* Efeito Vitrificado (Glassmorphism) */
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(0, 0, 0, 0.3));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 212, 255, 0.15);
       border-left: 3px solid rgba(0, 212, 255, 0.4);
     }
 
@@ -1260,7 +1264,15 @@
       box-shadow: 0 4px 30px rgba(0, 212, 255, 0.1);
     }
     @media (max-width: 900px) {
-      .rotating-badge { display: none; }
+      .rotating-badge { 
+        width: 90px;
+        height: 90px;
+        top: 30%;
+        right: 0%;
+        transform: scale(0.9);
+      }
+      .badge-logo-container img { width: 30px; }
+      .badge-text-svg text { font-size: 6.5px; letter-spacing: 2px; }
     }
     .badge-logo-container {
       position: absolute;
