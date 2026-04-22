@@ -1775,22 +1775,7 @@
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      // ── POST-PROCESSING: Bloom for glow effect ──
-      const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
-      const { RenderPass } = await import('three/addons/postprocessing/RenderPass.js');
-      const { UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js');
 
-      const composer = new EffectComposer(renderer);
-      const renderPass = new RenderPass(scene, camera);
-      composer.addPass(renderPass);
-
-      const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(w, h),
-        1.5,   // strength
-        1.2,   // radius
-        0.5    // threshold
-      );
-      composer.addPass(bloomPass);
 
       // Lighting Setup
       const ambientLight = new THREE.AmbientLight(0x333333, 1.2);
@@ -1821,13 +1806,11 @@
       const envLight = new THREE.HemisphereLight(0x222222, 0x080808, 0.4);
       scene.add(envLight);
 
-      // Dark Tech metallic material
+      // High-Gloss Blue Metallic material
       const redMaterial = new THREE.MeshStandardMaterial({
-        color: 0x225577,       // More reflective steel blue base
-        metalness: 0.9,
-        roughness: 0.18,
-        emissive: 0x00A8CC,    // Strong cyan glow
-        emissiveIntensity: 0.8, // Brighter exposure
+        color: 0x00A8FF,       // Bright glossy cyan-blue base
+        metalness: 0.95,
+        roughness: 0.05,       // Very smooth
       });
 
       // Load GLB model — use a pivot group for true local-center rotation
@@ -1896,7 +1879,7 @@
         // Subtle light pulse animation
         bottomLight.intensity = 0.6 + Math.sin(Date.now() * 0.002) * 0.15;
 
-        composer.render();
+        renderer.render(scene, camera);
       }
       animate();
 
