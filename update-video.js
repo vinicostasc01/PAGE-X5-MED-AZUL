@@ -3,89 +3,88 @@ const fs = require('fs');
 try {
   let content = fs.readFileSync('index.html', 'utf8');
 
-  // 1. Replace the CTA Links
-  content = content.replace(/href="#fechamento"/g, 'href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank"');
+  // 1. Remove Importmap
+  content = content.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
 
-  // 2. Replace 3D Pawn Container with Video Container
-  const oldContainer = `      <!-- 3D PAWN CONTAINER -->
-      <div id="pawn-container">
-        <canvas id="pawn-canvas"></canvas>
-        <!-- Text hint below the pawn -->
-        <div class="pawn-hint">Gire Livremente</div>
-      </div>`;
-  const newContainer = `      <!-- VIDEO CONTAINER -->
-      <div class="hero-video-container">
-        <video autoplay loop muted playsinline class="hero-video">
-          <source src="assets/hero-video.mp4" type="video/mp4">
-        </video>
-      </div>`;
-      
-  // Use a regex to be flexible with whitespace
-  content = content.replace(/<!-- 3D PAWN CONTAINER -->[\s\S]*?<\/div>\s*<\/div>/, newContainer + '\n    ');
-  // Wait, the regex `<\/div>\s*<\/div>` might eat too much. 
-  // Let's use string split and join:
-  const splitPoint1 = '<!-- 3D PAWN CONTAINER -->';
-  const splitPoint2 = '<div class="hero-people-area">'; // This comes after it usually
-  if(content.includes(splitPoint1) && content.includes(splitPoint2)) {
-    const start = content.split(splitPoint1)[0];
-    const end = content.split(splitPoint2);
-    // Remove the first part of "end" arrays which is the pawn-container part
-    content = start + newContainer + '\n\n    ' + splitPoint2 + end.slice(1).join(splitPoint2);
-  } else {
-    // Fallback if structured differently (search for #pawn-container block instead)
-    content = content.replace(/<!-- 3D PAWN CONTAINER -->[\s\S]*?<div id="pawn-container">[\s\S]*?<canvas id="pawn-canvas"><\/canvas>[\s\S]*?<\/div>[\s\S]*?<\/div>/, newContainer);
-  }
+  // 2. Remove pawn canvas and inject Video
+  const videoHTML = `<video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>`;
+  content = content.replace('<canvas id="pawn-canvas"></canvas>', videoHTML);
+  // Also remove pawn-glow since we don't need it with the video potentially
+  content = content.replace('<div class="pawn-glow"></div>', '');
 
-  // 3. Inject CSS
-  const cssInject = `
-    /* ── HERO VIDEO CONTAINER ── */
-    .hero-video-container {
-      position: absolute;
-      right: 5%;
-      top: 50%;
-      transform: translateY(-50%);
+  // 3. Inject CSS for video
+  const videoCSS = `
+    /* ── SCROLL SCRUB VIDEO ── */
+    #chess-video {
       width: 720px;
       height: 720px;
-      z-index: 2;
-      pointer-events: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-    .hero-video {
-      width: 100%;
-      height: 100%;
       object-fit: cover;
       mix-blend-mode: screen;
-      opacity: 0.95;
-    }
-    @media (max-width: 1200px) {
-      .hero-video-container {
-        width: 500px;
-        height: 500px;
-        right: -5%;
-      }
+      pointer-events: none;
+      display: block;
+      margin: 0 auto;
     }
     @media (max-width: 900px) {
-      .hero-video-container {
-        position: relative;
-        top: 0;
-        right: 0;
-        transform: translateY(0);
-        width: 350px;
-        height: 350px;
-        margin: 40px auto 0 auto;
+      #chess-video {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
       }
     }
-    `;
-    
-  if (!content.includes('.hero-video-container')) {
-    content = content.replace('</style>', cssInject + '\n  </style>');
+  `;
+  if (!content.includes('#chess-video')) {
+    content = content.replace('</style>', videoCSS + '\n  </style>');
   }
 
+  // 4. Remove WebGL Script Logic for pawn (Lines 1910 to 2036 approx)
+  content = content.replace(/\/\/ ── THREE\.JS 3D CHESS PAWN \(GLB\) — SCROLL-DRIVEN ROTATION ──[\s\S]*?\)\(\);/, '');
+
+  // 5. Inject Scroll Scrub JS Logic
+  const scrubJS = `
+    // ── SCROLL SCRUB VIDEO LOGIC ──
+    const chessVideo = document.getElementById('chess-video');
+    if (chessVideo) {
+      // Pause video to take manual control
+      chessVideo.pause();
+
+      // Ensure video data is loaded before reading duration
+      chessVideo.addEventListener('loadedmetadata', () => {
+        let isScrubbing = false;
+
+        window.addEventListener('scroll', () => {
+          if (!isScrubbing) {
+            window.requestAnimationFrame(() => {
+              // Calculate scroll percentage (0 to 1) based on document height
+              const docHeight = document.body.scrollHeight - window.innerHeight;
+              const scrollPercent = window.scrollY / docHeight;
+              
+              // Map percentage to video duration
+              const maxTime = Math.max(0, chessVideo.duration - 0.1); 
+              let targetTime = scrollPercent * maxTime;
+              
+              // Scrub bounds
+              if (targetTime < 0) targetTime = 0;
+              if (targetTime > maxTime) targetTime = maxTime;
+
+              // Apply the time
+              chessVideo.currentTime = targetTime;
+              isScrubbing = false;
+            });
+            isScrubbing = true;
+          }
+        });
+      });
+    }
+  `;
+  content = content.replace('</script>\n</body>', scrubJS + '\n  </script>\n</body>');
+
+  // 6. Update CTAs Links
+  // Replacing 'href="#fechamento"' or anywhere there's a CTA to the form link explicitly
+  // We already see some have 'https://forms.gle/' but let's blanket cover the classes
+  content = content.replace(/href="#fechamento"/g, 'href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank"');
+
   fs.writeFileSync('index.html', content, 'utf8');
-  console.log("HTML successfully updated with video elements.");
-} catch(e) {
-  console.log("Error:", e);
+  console.log("Substituição finalizada. Arquivo index.html atualizado com sucesso!");
+} catch (e) {
+  console.error("Erro na atualização:", e);
 }

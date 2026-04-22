@@ -16,14 +16,7 @@
   <link rel="icon" type="image/png" href="assets/x5-logo.png">
 
   <!-- Three.js + GLTFLoader via importmap -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
+  
 
   <style>
     *,
@@ -1349,6 +1342,25 @@
       }
     }
     
+  
+    /* ── SCROLL SCRUB VIDEO ── */
+    #chess-video {
+      width: 720px;
+      height: 720px;
+      object-fit: cover;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      display: block;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      #chess-video {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+      }
+    }
+  
   </style>
 </head>
 
@@ -1473,8 +1485,8 @@
 
           <div class="pawn-wrapper">
             <div class="pawn-container reveal" id="pawn-container">
-              <div class="pawn-glow"></div>
-              <canvas id="pawn-canvas"></canvas>
+              
+              <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
             </div>
           </div>
         </div>
@@ -1948,134 +1960,7 @@
       });
     })();
 
-    // ── THREE.JS 3D CHESS PAWN (GLB) — SCROLL-DRIVEN ROTATION ──
-    (async function initPawn() {
-      const container = document.getElementById('pawn-container');
-      const canvas = document.getElementById('pawn-canvas');
-      if (!canvas || !container) return;
-
-      const w = container.clientWidth || 400;
-      const h = container.clientHeight || 400;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
-      camera.position.set(0, 2, 7);
-      camera.lookAt(0, 1.5, 0);
-
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.5;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-
-
-      // Lighting Setup - Studio Photorealism
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Low ambient to preserve deep shadows
-      scene.add(ambientLight);
-
-      const keyLight = new THREE.DirectionalLight(0xffffff, 4.0); // Hard, intense key light for crisp speculars
-      keyLight.position.set(4, 6, 4);
-      scene.add(keyLight);
-
-      const rimLight = new THREE.DirectionalLight(0x00D4FF, 2.0); // Sharp cyan rim light
-      rimLight.position.set(-5, 5, -5);
-      scene.add(rimLight);
-
-      const fillLight = new THREE.PointLight(0x0033bb, 2.5, 20); // Saturated blue fill from the bottom
-      fillLight.position.set(-1, -2, 4);
-      scene.add(fillLight);
-
-      // Deep Cobalt-Blue Metal Material (Crisp, defined, un-blown)
-      const redMaterial = new THREE.MeshStandardMaterial({
-        color: 0x002277,       // Deep saturated cobalt-blue base
-        metalness: 1.0,        // Absolute pure metal
-        roughness: 0.12,       // Highly polished, sharp pin-point reflections
-      });
-
-      // Load GLB model — use a pivot group for true local-center rotation
-      const loader = new GLTFLoader();
-      let pivotGroup = null; // This group rotates; the model is offset inside it
-
-      loader.load('assets/chess_piece_king.glb', (gltf) => {
-        const model = gltf.scene;
-
-        // Auto-center and scale the model
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 4.2 / maxDim;
-        model.scale.setScalar(scale);
-
-        // Recalculate bounding box after scaling
-        const scaledBox = new THREE.Box3().setFromObject(model);
-        const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-
-        // Offset model so its center is at origin (0,0,0) of the pivot group
-        model.position.set(-scaledCenter.x, -scaledCenter.y, -scaledCenter.z);
-
-        // Force red metallic material on ALL meshes
-        model.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            child.material = redMaterial.clone();
-          }
-        });
-
-        // Create pivot group at the center of the geometry
-        pivotGroup = new THREE.Group();
-        pivotGroup.add(model);
-        // Position the pivot group fixed in front of the camera (which looks at 1.5)
-        pivotGroup.position.set(0, 1.5, 0);
-
-        scene.add(pivotGroup);
-        console.log('Chess pawn GLB loaded successfully');
-      }, (progress) => {
-        console.log('Loading GLB:', Math.round((progress.loaded / progress.total) * 100) + '%');
-      }, (error) => {
-        console.error('Error loading GLB:', error);
-      });
-
-      // Scroll-driven rotation on LOCAL Y axis only (horizontal spin)
-      function animate() {
-        requestAnimationFrame(animate);
-
-        if (pivotGroup) {
-          // Map scroll progress to Y rotation (horizontal)
-          const scrollY = window.scrollY || window.pageYOffset;
-          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-          const scrollProgress = docHeight > 0 ? scrollY / docHeight : 0;
-
-          // Rotate only on Y axis — 3 full horizontal rotations over page scroll
-          pivotGroup.rotation.y = scrollProgress * Math.PI * 6;
-          // Lock X and Z axes
-          pivotGroup.rotation.x = 0;
-          pivotGroup.rotation.z = 0;
-        }
-
-        // Subtle light pulse animation
-        fillLight.intensity = 0.6 + Math.sin(Date.now() * 0.002) * 0.15;
-
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      // Resize observer
-      const ro = new ResizeObserver(() => {
-        const nw = container.clientWidth;
-        const nh = container.clientHeight;
-        camera.aspect = nw / nh;
-        camera.updateProjectionMatrix();
-        renderer.setSize(nw, nh);
-
-      });
-      ro.observe(container);
-    })();
+    
   </script>
 </body>
 
