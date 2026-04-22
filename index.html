@@ -18,6 +18,15 @@
   <!-- Three.js + GLTFLoader via importmap -->
   
 
+  
+  <!-- Three.js via importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
   <style>
     *,
     *::before,
@@ -1303,12 +1312,10 @@
   
     /* ── HERO VIDEO CONTAINER ── */
     .hero-video-container {
-      position: absolute;
-      right: 5%;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 720px;
-      height: 720px;
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
       z-index: 2;
       pointer-events: none;
       display: flex;
@@ -1318,27 +1325,20 @@
     }
     .hero-video {
       width: 100%;
-      height: 100%;
+      height: auto;
       object-fit: cover;
       mix-blend-mode: screen;
       opacity: 0.95;
     }
     @media (max-width: 1200px) {
       .hero-video-container {
-        width: 500px;
-        height: 500px;
-        right: -5%;
+        max-width: 500px;
       }
     }
     @media (max-width: 900px) {
       .hero-video-container {
-        position: relative;
-        top: 0;
-        right: 0;
-        transform: translateY(0);
-        width: 350px;
-        height: 350px;
-        margin: 40px auto 0 auto;
+        max-width: 100%;
+        margin-top: 40px;
       }
     }
     
@@ -1347,42 +1347,20 @@
     #chess-video {
       width: 720px;
       height: 720px;
-    /* ── SCROLL VIDEO STYLES ── */
-    #chess-video {
-      position: absolute;
-      right: 5%;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 720px;
-      height: 720px;
       object-fit: cover;
-      mix-blend-mode: screen; /* Remove parts pretas do video */
+      mix-blend-mode: screen;
       pointer-events: none;
-      z-index: 5;
+      display: block;
+      margin: 0 auto;
     }
-
-    @media (max-width: 1300px) {
-      #chess-video {
-        width: 550px;
-        height: 550px;
-        right: 0%;
-      }
-    }
-
     @media (max-width: 900px) {
       #chess-video {
-        position: relative;
-        transform: none;
-        right: auto;
-        top: auto;
         width: 100%;
         height: auto;
-        max-width: 400px;
         max-height: 400px;
-        margin: 40px auto 30px auto;
-        display: block;
       }
     }
+  
   </style>
 </head>
 
@@ -1414,10 +1392,6 @@
     <div class="hero-overlay"></div>
     <div class="hero-vignette"></div>
     <canvas id="three-canvas"></canvas>
-
-    <!-- ── SCROLL-DRIVEN VIDEO HERO ── -->
-    <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
-
 
     <!-- Empty space where background people are visible (centered via object-position) -->
     <div class="hero-people-area"></div>
@@ -1509,12 +1483,11 @@
             </div>
           </div>
 
-          <div class="pawn-wrapper">
-            <div class="pawn-container reveal" id="pawn-container">
-              
-              <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
-            </div>
+          
+          <div class="hero-video-container">
+            <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
           </div>
+  
         </div>
       </div>
     </div>
@@ -1683,7 +1656,9 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    
+    
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     // ── NAVBAR SCROLL ──
@@ -1987,32 +1962,54 @@
     })();
 
     
-    // ── SCROLL SCRUB VIDEO LOGIC ──
-    const heroVideo = document.getElementById('chess-video');
-    if (heroVideo) {
-      // Trigger scrubbing once metadata (duration) loaded
-      heroVideo.addEventListener('loadedmetadata', function() {
-        // Pause to prevent normal playback
-        heroVideo.pause();
+  
+    // ── VIDEO SCROLL SCRUB (Scroll = Framerate) ──
+    (function initVideoScrub() {
+      const video = document.getElementById('chess-video');
+      if (!video) return;
+
+      // Ensure video is totally loaded before scrubbing
+      video.addEventListener('loadedmetadata', () => {
+        let isScrolling = false;
 
         function scrubVideo() {
+          // Calculate scroll progress (0 to 1) based on current scroll position relative to total page height
           const scrollY = window.scrollY || window.pageYOffset;
-          // Set duration range over which video scrubs (e.g. 1.5x screen height)
-          const scrollEnd = document.documentElement.clientHeight * 1.5;
-          
-          let progress = scrollY / scrollEnd;
-          if (progress < 0) progress = 0;
-          if (progress > 0.999) progress = 0.999;
-          
-          // Map scroll progress to video timeline
-          heroVideo.currentTime = heroVideo.duration * progress;
-          
-          requestAnimationFrame(scrubVideo); // Loops natively with browser repaints
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const scrollProgress = maxScroll > 0 ? (scrollY / maxScroll) : 0;
+
+          // Multiply by the video duration
+          const targetTime = scrollProgress * video.duration;
+
+          // Request animation frame is not strictly needed for direct scroll matching, but helps smooth out native rendering
+          if (!isNaN(targetTime) && isFinite(targetTime)) {
+            // Smoothly lerp towards target frame to prevent stuttering
+            video.currentTime += (targetTime - video.currentTime) * 0.1;
+          }
+
+          if (isScrolling) {
+            requestAnimationFrame(scrubVideo);
+          }
         }
+
+        window.addEventListener('scroll', () => {
+          if (!isScrolling) {
+            isScrolling = true;
+            requestAnimationFrame(scrubVideo);
+          }
+          
+          // Debounce to stop requestAnimationFrame loop when scroll stops
+          clearTimeout(video.scrollTimeout);
+          video.scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+          }, 100);
+        });
         
-        requestAnimationFrame(scrubVideo);
+        // Initial scrub call to set frame on load
+        video.currentTime = 0;
       });
-    }
+    })();
+  
   </script>
 </body>
 

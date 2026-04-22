@@ -3,108 +3,96 @@ const fs = require('fs');
 try {
   let content = fs.readFileSync('index.html', 'utf8');
 
-  // 1. Remove Three.JS import map completely
-  content = content.replace(/<!-- Three\.js \+ GLTFLoader via importmap -->[\s\S]*?<\/script>/, '');
+  // 1. Replace the Three.js container with the Video Container
+  const pawnContainerStr = `<div id="pawn-container">
+        <canvas id="pawn-canvas"></canvas>
+      </div>`;
+  const videoContainerStr = `<div class="hero-video-container">
+        <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="metadata"></video>
+      </div>`;
+  content = content.replace(pawnContainerStr, videoContainerStr);
 
-  // 2. Replace the HTML canvas with the video tag
-  const videoHTML = `
-    <!-- ── SCROLL-DRIVEN VIDEO HERO ── -->
-    <div class="video-container">
-      <video id="chess-video" src="assets/chess-video.mp4" muted playsinline preload="auto"></video>
-    </div>
+  // 2. Remove the Three.js importmap and ThreeJS libraries import from head
+  const importmapRegex = /<script type="importmap">[\s\S]*?<\/script>/;
+  content = content.replace(importmapRegex, '');
+  content = content.replace(/import \* as THREE from 'three';/, '');
+  content = content.replace(/import \{ GLTFLoader \} from 'three\/addons\/loaders\/GLTFLoader\.js';/, '');
+  content = content.replace(/<script type="module">/, '<script>');
+
+  // 3. Remove the entire THREE.JS 3D CHESS PAWN logic
+  // The block starts with "// ── THREE.JS 3D CHESS PAWN (GLB)" and ends before "</script>"
+  const threeLogicRegex = /\/\/ ── THREE\.JS 3D CHESS PAWN[\s\S]*?\}\)\(\);/g;
+  content = content.replace(threeLogicRegex, '');
+
+  // 4. Inject Video Scroll Scrube Logic
+  const videoLogic = `
+    // ── VIDEO SCROLL SCRUB (Scroll = Framerate) ──
+    (function initVideoScrub() {
+      const video = document.getElementById('chess-video');
+      if (!video) return;
+
+      // Ensure video is totally loaded before scrubbing
+      video.addEventListener('loadedmetadata', () => {
+        let isScrolling = false;
+
+        function scrubVideo() {
+          // Calculate scroll progress (0 to 1) based on current scroll position relative to total page height
+          const scrollY = window.scrollY || window.pageYOffset;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const scrollProgress = maxScroll > 0 ? (scrollY / maxScroll) : 0;
+
+          // Multiply by the video duration
+          const targetTime = scrollProgress * video.duration;
+
+          // Request animation frame is not strictly needed for direct scroll matching, but helps smooth out native rendering
+          if (!isNaN(targetTime) && isFinite(targetTime)) {
+            // Smoothly lerp towards target frame to prevent stuttering
+            video.currentTime += (targetTime - video.currentTime) * 0.1;
+          }
+
+          if (isScrolling) {
+            requestAnimationFrame(scrubVideo);
+          }
+        }
+
+        window.addEventListener('scroll', () => {
+          if (!isScrolling) {
+            isScrolling = true;
+            requestAnimationFrame(scrubVideo);
+          }
+          
+          // Debounce to stop requestAnimationFrame loop when scroll stops
+          clearTimeout(video.scrollTimeout);
+          video.scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+          }, 100);
+        });
+        
+        // Initial scrub call to set frame on load
+        video.currentTime = 0;
+      });
+    })();
   `;
-  content = content.replace(/<div id="pawn-container"[\s\S]*?<\/canvas>\s*<\/div>/, videoHTML);
+  content = content.replace('</script>', videoLogic + '\n  </script>');
 
-  // 3. Add CSS for the video container
-  const videoCSS = `
-    .video-container {
-      position: absolute;
-      right: 5%;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 720px;
-      height: 720px;
-      z-index: 5;
-      pointer-events: none;
-      mix-blend-mode: screen; /* Remove parts pretas do video */
-    }
-
-    #chess-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    @media (max-width: 1300px) {
-      .video-container {
-        width: 550px;
-        height: 550px;
-        right: 0%;
-      }
-    }
-
-    @media (max-width: 900px) {
-      .video-container {
-        position: relative;
-        right: auto;
-        top: auto;
-        transform: none;
-        width: 100%;
-        max-width: 400px;
-        height: 400px;
-        margin: 40px auto 0;
-      }
-    }
-  `;
-  content = content.replace('/* ── LIVE SECTION ── */', videoCSS + '\n    /* ── LIVE SECTION ── */');
-
-  // 4. Remove all ThreeJS Logic
-  content = content.replace(/\/\/ ── THREE\.JS 3D CHESS PAWN \(GLB\) — SCROLL-DRIVEN ROTATION ──[\s\S]*?\/\/ ── END THREE\.JS ──/, '');
-  // Because I didn't wrap it with "END THREE.JS", I'll use a specific match from starting to end of file, or just replace the specific IIFE block.
-  // The ThreeJS block starts at `// ── THREE.JS 3D CHESS PAWN` and ends before `</script>`
-  content = content.replace(/\/\/ ── THREE\.JS 3D CHESS PAWN[\s\S]*?\}\)\(\);/g, '');
-
-  // 5. Inject GSAP Scroll Scrub Animation
-  const videoJS = `
-    // ── SCROLL SCRUB VIDEO LOGIC ──
-    const video = document.getElementById('chess-video');
-    
-    // We must ensure the video metadata is loaded before reading duration
-    video.addEventListener('loadedmetadata', function() {
-      // Create a render loop mapping scroll directly to video current time
-      function scrubVideo() {
-        const scrollY = window.scrollY || window.pageYOffset;
-        
-        // Define the scroll distance over which the video scrub happens
-        // Let's say it finishes the video by the time you reach the second section
-        const passHeight = document.documentElement.clientHeight * 1.5;
-        
-        let progress = scrollY / passHeight;
-        
-        // Clamp between 0 and 0.99 (avoiding floating point glitch at exact end)
-        if (progress > 0.99) progress = 0.99;
-        if (progress < 0) progress = 0;
-        
-        // Scrub video smoothly
-        video.currentTime = video.duration * progress;
-        
-        requestAnimationFrame(scrubVideo);
-      }
-      
-      requestAnimationFrame(scrubVideo);
-    });
-  `;
-  
-  // Actually wait, let's just insert the VideoJS logic right before </script>
-  content = content.replace('</script>\n</body>', videoJS + '\n  </script>\n</body>');
-
-  // 6. Fix Form Links globally!
-  // Searching for CTA links using regex and replacing the hrefs
+  // 5. Update CTA buttons URLs
+  // Find <a ... class="cta-btn" ...> and replace href
   content = content.replace(/href="#fechamento"/g, 'href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank"');
+  content = content.replace(/href="[^"]*"/g, (match) => {
+    if (match.includes('forms.gle')) return match;
+    if (match.includes('index-silver')) return match; // skip internal links maybe? actually the user wants all CTAs
+    // Lets be specific: replace href="..." if it comes before class="cta-btn" or id="hero-cta" etc.
+    return match;
+  });
+
+  // More reliable way to replace button links (Acesso à live, Garantir meu acesso)
+  content = content.replace(/<a href="[^"]*"\s*class="([^"]*)"\s*id="hero-cta">/g, '<a href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank" class="$1" id="hero-cta">');
+  content = content.replace(/<a href="[^"]*"\s*class="glow-btn">/g, '<a href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank" class="glow-btn">');
+  content = content.replace(/<a href="[^"]*"\s*class="nav-cta">/g, '<a href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank" class="nav-cta">');
+  content = content.replace(/<a href="[^"]*"\s*class="cta-btn">/g, '<a href="https://forms.gle/EZNucPkT9GYVzYhX6" target="_blank" class="cta-btn">');
 
   fs.writeFileSync('index.html', content, 'utf8');
-
-  console.log("Substituição finalizada!");
+  console.log("Substituição do 3D por Vídeo MP4 concluída com sucesso.");
 } catch (e) {
-  console.error(e);
+  console.error("Erro:", e);
 }
