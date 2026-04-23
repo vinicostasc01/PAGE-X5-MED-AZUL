@@ -1273,14 +1273,25 @@
     }
     @media (max-width: 900px) {
       .rotating-badge { 
-        width: 90px;
-        height: 90px;
-        top: 30%;
-        right: 0%;
-        transform: scale(0.9);
+        width: 110px;
+        height: 110px;
+        top: auto;
+        bottom: 180px;
+        right: 16px;
+        transform: none;
       }
-      .badge-logo-container img { width: 30px; }
-      .badge-text-svg text { font-size: 6px; letter-spacing: 2px; font-family: 'Montserrat', sans-serif; font-weight: 900; }
+      .badge-logo-container img { width: 34px; }
+      .badge-text-svg text { font-size: 7px; letter-spacing: 2.2px; font-family: 'Montserrat', sans-serif; font-weight: 900; }
+    }
+    @media (max-width: 480px) {
+      .rotating-badge {
+        width: 95px;
+        height: 95px;
+        bottom: 160px;
+        right: 12px;
+      }
+      .badge-logo-container img { width: 28px; }
+      .badge-text-svg text { font-size: 6.2px; letter-spacing: 2px; }
     }
     .badge-logo-container {
       position: absolute;
@@ -1358,9 +1369,9 @@
         <img src="assets/x5-logo-branca.png" alt="X5" />
       </div>
       <svg class="badge-text-svg" viewBox="0 0 100 100">
-        <path id="badgePath" d="M 50,50 m -35,0 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0" fill="transparent" />
+        <path id="badgePath" d="M 50, 50 m -35, 0 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0" fill="transparent" />
         <text>
-          <textPath href="#badgePath" startOffset="0%" textLength="219.9" lengthAdjust="spacing">LIVES SEMANAIS AS 20H BRT — LIVES SEMANAIS AS 20H BRT —</textPath>
+          <textPath href="#badgePath" startOffset="0%">LIVES SEMANAIS ÀS 20H BRT — LIVES SEMANAIS ÀS 20H BRT — </textPath>
         </text>
       </svg>
     </div>
